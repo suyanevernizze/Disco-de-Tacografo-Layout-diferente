@@ -329,7 +329,7 @@ function renderMKpiDetail(d,stats){
       <div class="card-title" style="margin:0">${mPendFilter==='q1'?'Pendências 1ª Quinzena':mPendFilter==='q2'?'Pendências 2ª Quinzena':'Todas as pendências'} <span style="font-family:var(--font-mono);font-size:10px;color:var(--tx3)">(${filteredPend.length})</span></div>
       ${mPendFilter!=='all'?`<span style="font-size:11px;color:var(--acc);cursor:pointer" onclick="mFilterPend('all')">✕ limpar filtro</span>`:''}
     </div>
-    <div class="table-wrap" style="max-height:300px;overflow-y:auto"><table class="modal-table">
+    <div class="table-wrap" style="${filteredPend.length>25?'max-height:'+Math.round(25*34+34)+'px;overflow-y:auto;':''}"><table class="modal-table">
       <thead><tr><th>Motorista</th><th>Placa</th><th>Mês</th><th>Status</th><th>Picos</th></tr></thead>
       <tbody>${filteredPend.map(r=>`<tr><td>${r.motorista}</td><td class="vc">${r.placa}</td><td>${r.mes}</td><td><span class="badge ${r.statusPend.includes('1ª')?'ba':'br'}" style="border-color:${r.statusPend.includes('1ª')?'#BA7517':'#E24B4A'};color:${r.statusPend.includes('1ª')?'#BA7517':'#E24B4A'};background:${r.statusPend.includes('1ª')?'rgba(186,117,23,.12)':'rgba(226,75,74,.12)'}">${r.statusPend}</span></td><td class="${r.totalPicos>0?'vr':'vc'}">${r.totalPicos}</td></tr>`).join('')}</tbody>
     </table></div>`;
