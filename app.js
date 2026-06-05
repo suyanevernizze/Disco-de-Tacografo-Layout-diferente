@@ -248,7 +248,26 @@ function renderMKpis(){
   renderMKpiDetail(d,{total,entregues,totalPend,pend1,pend2,somaPicos,somaEnt,somaMeta,taxa,meses});
 }
 
+window.mFilterPend=function(quin){
+  window._mPendFilter = window._mPendFilter===quin ? 'all' : quin;
+  renderMKpiDetail(mensalFilt, (function(){
+    const d=mensalFilt;
+    const total=d.length;
+    const entregues=d.filter(r=>r.statusPend==='ENTREGUES').length;
+    const pend1=d.filter(r=>r.statusPend==='PENDÊNCIA 1ª QUIN').length;
+    const pend2=d.filter(r=>r.statusPend==='PENDÊNCIA 2ª QUIN').length;
+    const totalPend=pend1+pend2;
+    const somaPicos=d.reduce((s,r)=>s+r.totalPicos,0);
+    const somaEnt=d.reduce((s,r)=>s+r.quin1+r.quin2,0);
+    const somaMeta=d.reduce((s,r)=>s+r.meta,0);
+    const taxa=total?Math.round(entregues/total*100):0;
+    const meses=[...new Set(d.map(r=>r.mes))].length;
+    return {total,entregues,totalPend,pend1,pend2,somaPicos,somaEnt,somaMeta,taxa,meses};
+  })());
+};
+
 window.mClickKpi=function(id){
+  window._mPendFilter='all';
   mActiveKpi = mActiveKpi===id ? null : id;
   const chartsArea=g('mChartsArea');
   if(mActiveKpi){chartsArea.style.display='none';}else{chartsArea.style.display='block';}
@@ -278,11 +297,41 @@ function renderMKpiDetail(d,stats){
     meses.map((m,i)=>`<div class="bar-row"><span class="bar-lbl">${m}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.round(entM[i]/maxE*100)}%;background:#1D9E75"></div></div><span class="bar-num">${entM[i]}</span></div>`).join('');
   }
   else if(mActiveKpi==='pendente'){
-    const pRows=d.filter(r=>r.statusPend&&r.statusPend!=='ENTREGUES').slice(0,20);
-    body=miniKpis([{l:'Total pendente',v:stats.totalPend},{l:'1ª Quin',v:stats.pend1},{l:'2ª Quin',v:stats.pend2},{l:'Motoristas',v:[...new Set(pRows.map(r=>r.motorista))].length}])+
-    `<div class="table-wrap" style="max-height:280px;overflow-y:auto"><table class="modal-table">
+    const allPend=d.filter(r=>r.statusPend&&r.statusPend!=='ENTREGUES');
+    const mPendFilter = window._mPendFilter||'all';
+    const filteredPend = mPendFilter==='q1' ? allPend.filter(r=>r.statusPend.includes('1ª'))
+                       : mPendFilter==='q2' ? allPend.filter(r=>r.statusPend.includes('2ª'))
+                       : allPend;
+
+    const q1Active = mPendFilter==='q1', q2Active = mPendFilter==='q2';
+
+    body=`<div class="detail-kpis">
+      <div class="detail-kpi">
+        <div class="dk-label">Total pendente</div>
+        <div class="dk-value">${stats.totalPend}</div>
+      </div>
+      <div class="detail-kpi pend-quin-card${q1Active?' pqc-active':''}" onclick="mFilterPend('q1')" style="cursor:pointer;border-color:${q1Active?'#BA7517':'var(--bd)'};background:${q1Active?'rgba(186,117,23,.1)':'var(--sf2)'};--kpi-color:#BA7517">
+        <div class="dk-label" style="color:#BA7517">1ª Quinzena</div>
+        <div class="dk-value" style="color:#BA7517">${stats.pend1}</div>
+        <div class="dk-sub" style="color:#BA7517;font-size:10px;margin-top:2px">${q1Active?'▸ clique para ver todos':'▸ clique para filtrar'}</div>
+      </div>
+      <div class="detail-kpi pend-quin-card${q2Active?' pqc-active':''}" onclick="mFilterPend('q2')" style="cursor:pointer;border-color:${q2Active?'#E24B4A':'var(--bd)'};background:${q2Active?'rgba(226,75,74,.1)':'var(--sf2)'};--kpi-color:#E24B4A">
+        <div class="dk-label" style="color:#E24B4A">2ª Quinzena</div>
+        <div class="dk-value" style="color:#E24B4A">${stats.pend2}</div>
+        <div class="dk-sub" style="color:#E24B4A;font-size:10px;margin-top:2px">${q2Active?'▸ clique para ver todos':'▸ clique para filtrar'}</div>
+      </div>
+      <div class="detail-kpi">
+        <div class="dk-label">Motoristas</div>
+        <div class="dk-value">${[...new Set(allPend.map(r=>r.motorista))].length}</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div class="card-title" style="margin:0">${mPendFilter==='q1'?'Pendências 1ª Quinzena':mPendFilter==='q2'?'Pendências 2ª Quinzena':'Todas as pendências'} <span style="font-family:var(--font-mono);font-size:10px;color:var(--tx3)">(${filteredPend.length})</span></div>
+      ${mPendFilter!=='all'?`<span style="font-size:11px;color:var(--acc);cursor:pointer" onclick="mFilterPend('all')">✕ limpar filtro</span>`:''}
+    </div>
+    <div class="table-wrap" style="max-height:300px;overflow-y:auto"><table class="modal-table">
       <thead><tr><th>Motorista</th><th>Placa</th><th>Mês</th><th>Status</th><th>Picos</th></tr></thead>
-      <tbody>${pRows.map(r=>`<tr><td>${r.motorista}</td><td class="vc">${r.placa}</td><td>${r.mes}</td><td><span class="badge ${r.statusPend.includes('1ª')?'ba':'br'}">${r.statusPend}</span></td><td class="vr">${r.totalPicos}</td></tr>`).join('')}</tbody>
+      <tbody>${filteredPend.map(r=>`<tr><td>${r.motorista}</td><td class="vc">${r.placa}</td><td>${r.mes}</td><td><span class="badge ${r.statusPend.includes('1ª')?'ba':'br'}" style="border-color:${r.statusPend.includes('1ª')?'#BA7517':'#E24B4A'};color:${r.statusPend.includes('1ª')?'#BA7517':'#E24B4A'};background:${r.statusPend.includes('1ª')?'rgba(186,117,23,.12)':'rgba(226,75,74,.12)'}">${r.statusPend}</span></td><td class="${r.totalPicos>0?'vr':'vc'}">${r.totalPicos}</td></tr>`).join('')}</tbody>
     </table></div>`;
   }
   else if(mActiveKpi==='picos'){
