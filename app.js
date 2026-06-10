@@ -241,16 +241,15 @@ function renderMKpis(){
   const taxa=total?Math.round(entregues/total*100):0;
   const meses=[...new Set(d.map(r=>r.mes))].length;
 
-  // Pendências Agregado: cruzamento com aba Discos (motoristas/placas com pendência na aba Mensal que aparecem em discosAll)
-  const placasPendMensal=new Set(d.filter(r=>r.statusPend&&r.statusPend!=='ENTREGUES').map(r=>r.placa));
-  const pendAgr=discosAll.filter(r=>placasPendMensal.has(r.placa));
-  const pendAgrUniq=[...new Set(pendAgr.map(r=>r.placa))].length;
-  const pendAgrMot=[...new Set(pendAgr.map(r=>r.motorista))].length;
+  // Pendências Agregado: contrato AGREGADO (ou TERCEIRO) com pendência
+  const pendAgrRows=d.filter(r=>r.statusPend&&r.statusPend!=='ENTREGUES'&&r.contrato!=='FROTA');
+  const pendAgrUniq=[...new Set(pendAgrRows.map(r=>r.placa))].length;
+  const pendAgrMot=[...new Set(pendAgrRows.map(r=>r.motorista))].length;
 
-  // Pendências Frota: cruzamento com aba Leitura VDO (mesmas placas pendentes)
-  const pendFrota=vdoAll.filter(r=>placasPendMensal.has(r.placa));
-  const pendFrotaUniq=[...new Set(pendFrota.map(r=>r.placa))].length;
-  const pendFrotaMot=[...new Set(pendFrota.map(r=>r.motorista))].length;
+  // Pendências Frota: contrato FROTA com pendência
+  const pendFrotaRows=d.filter(r=>r.statusPend&&r.statusPend!=='ENTREGUES'&&r.contrato==='FROTA');
+  const pendFrotaUniq=[...new Set(pendFrotaRows.map(r=>r.placa))].length;
+  const pendFrotaMot=[...new Set(pendFrotaRows.map(r=>r.motorista))].length;
 
   g('mKpiGrid').innerHTML=[
     kpiCard('total',      mActiveKpi,SVG_TRUCK, '#6C63FF','Registros',         total,                    meses+' mês(es)',                     'Detalhar tudo',      "mClickKpi('total')"),
@@ -261,7 +260,7 @@ function renderMKpis(){
     kpiCard('taxa',       mActiveKpi,SVG_CHART, '#378ADD','Taxa entrega',      taxa+'%',                 'meta: 100%',                         'Evolução mensal',    "mClickKpi('taxa')"),
     kpiCard('discos',     mActiveKpi,SVG_DISC,  '#7F77DD','Discos entregues',  somaEnt.toLocaleString('pt-BR'),'meta: '+somaMeta.toLocaleString('pt-BR'),'Ver déficit',"mClickKpi('discos')"),
   ].join('');
-  renderMKpiDetail(d,{total,entregues,totalPend,pend1,pend2,somaPicos,somaEnt,somaMeta,taxa,meses,pendAgr,pendAgrUniq,pendAgrMot,pendFrota,pendFrotaUniq,pendFrotaMot,placasPendMensal});
+  renderMKpiDetail(d,{total,entregues,totalPend,pend1,pend2,somaPicos,somaEnt,somaMeta,taxa,meses,pendAgrRows,pendAgrUniq,pendAgrMot,pendFrotaRows,pendFrotaUniq,pendFrotaMot});
 }
 
 window.mFilterPend=function(quin){
@@ -278,14 +277,13 @@ window.mFilterPend=function(quin){
     const somaMeta=d.reduce((s,r)=>s+r.meta,0);
     const taxa=total?Math.round(entregues/total*100):0;
     const meses=[...new Set(d.map(r=>r.mes))].length;
-    const placasPendMensal=new Set(d.filter(r=>r.statusPend&&r.statusPend!=='ENTREGUES').map(r=>r.placa));
-    const pendAgr=discosAll.filter(r=>placasPendMensal.has(r.placa));
-    const pendAgrUniq=[...new Set(pendAgr.map(r=>r.placa))].length;
-    const pendAgrMot=[...new Set(pendAgr.map(r=>r.motorista))].length;
-    const pendFrota=vdoAll.filter(r=>placasPendMensal.has(r.placa));
-    const pendFrotaUniq=[...new Set(pendFrota.map(r=>r.placa))].length;
-    const pendFrotaMot=[...new Set(pendFrota.map(r=>r.motorista))].length;
-    return {total,entregues,totalPend,pend1,pend2,somaPicos,somaEnt,somaMeta,taxa,meses,pendAgr,pendAgrUniq,pendAgrMot,pendFrota,pendFrotaUniq,pendFrotaMot,placasPendMensal};
+    const pendAgrRows=d.filter(r=>r.statusPend&&r.statusPend!=='ENTREGUES'&&r.contrato!=='FROTA');
+    const pendAgrUniq=[...new Set(pendAgrRows.map(r=>r.placa))].length;
+    const pendAgrMot=[...new Set(pendAgrRows.map(r=>r.motorista))].length;
+    const pendFrotaRows=d.filter(r=>r.statusPend&&r.statusPend!=='ENTREGUES'&&r.contrato==='FROTA');
+    const pendFrotaUniq=[...new Set(pendFrotaRows.map(r=>r.placa))].length;
+    const pendFrotaMot=[...new Set(pendFrotaRows.map(r=>r.motorista))].length;
+    return {total,entregues,totalPend,pend1,pend2,somaPicos,somaEnt,somaMeta,taxa,meses,pendAgrRows,pendAgrUniq,pendAgrMot,pendFrotaRows,pendFrotaUniq,pendFrotaMot};
   })());
 };
 
@@ -320,8 +318,7 @@ function renderMKpiDetail(d,stats){
     meses.map((m,i)=>`<div class="bar-row"><span class="bar-lbl">${m}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.round(entM[i]/maxE*100)}%;background:#1D9E75"></div></div><span class="bar-num">${entM[i]}</span></div>`).join('');
   }
   else if(mActiveKpi==='pend-agr'){
-    // Base: aba Mensal (pendências por placa), dados extras cruzados com aba Discos
-    const allPendMensal=d.filter(r=>r.statusPend&&r.statusPend!=='ENTREGUES');
+    const allPendMensal=d.filter(r=>r.statusPend&&r.statusPend!=='ENTREGUES'&&r.contrato!=='FROTA');
     const mPendFilter=window._mPendFilter||'all';
     const filteredMensal=mPendFilter==='q1'?allPendMensal.filter(r=>r.statusPend.includes('1ª'))
                         :mPendFilter==='q2'?allPendMensal.filter(r=>r.statusPend.includes('2ª'))
@@ -329,7 +326,6 @@ function renderMKpiDetail(d,stats){
     const pend1=allPendMensal.filter(r=>r.statusPend.includes('1ª')).length;
     const pend2=allPendMensal.filter(r=>r.statusPend.includes('2ª')).length;
     const q1Active=mPendFilter==='q1', q2Active=mPendFilter==='q2';
-    // Para cada linha da mensal pendente, busca dados extras na aba Discos (picos, recebimento)
     const rows=filteredMensal.map(r=>{
       const disco=discosAll.find(d=>d.placa===r.placa&&d.mes===r.mes)||{};
       return {...r, picosDiscos:disco.picos||0, dataReceb:disco.dataReceb||'—'};
@@ -372,8 +368,7 @@ function renderMKpiDetail(d,stats){
     </table></div>`;
   }
   else if(mActiveKpi==='pend-frota'){
-    // Base: aba Mensal (pendências por placa), dados extras cruzados com aba Leitura VDO
-    const allPendMensal=d.filter(r=>r.statusPend&&r.statusPend!=='ENTREGUES');
+    const allPendMensal=d.filter(r=>r.statusPend&&r.statusPend!=='ENTREGUES'&&r.contrato==='FROTA');
     const mPendFilter=window._mPendFilter||'all';
     const filteredMensal=mPendFilter==='q1'?allPendMensal.filter(r=>r.statusPend.includes('1ª'))
                         :mPendFilter==='q2'?allPendMensal.filter(r=>r.statusPend.includes('2ª'))
@@ -381,7 +376,6 @@ function renderMKpiDetail(d,stats){
     const pend1=allPendMensal.filter(r=>r.statusPend.includes('1ª')).length;
     const pend2=allPendMensal.filter(r=>r.statusPend.includes('2ª')).length;
     const q1Active=mPendFilter==='q1', q2Active=mPendFilter==='q2';
-    // Para cada linha da mensal pendente, busca dados extras na aba VDO (picos, obs)
     const rows=filteredMensal.map(r=>{
       const vdo=vdoAll.find(v=>v.placa===r.placa&&v.mes===r.mes)||{};
       return {...r, picosVdo:vdo.picos||0, obsVdo:vdo.obs||'—'};
