@@ -143,63 +143,89 @@ function populateFilters(){
 }
 
 window.applyMensal=function(){
-  const mes=v('mSelMes'),mot=v('mSelMot'),con=v('mSelCon'),fil=v('mSelFil'),
+  const mes=v('mSelMes'),mot=v('mSelMot'),con=v('mSelCon'),
         sta=v('mSelStatus'),placa=v('mSelPlaca').toUpperCase(),
-        q=(v('mSearch')||v('mTableSearch')).toLowerCase();
+        dIni=v('mDateIni'),dFim=v('mDateFim');
+  const tIni=dIni?new Date(dIni).getTime():null;
+  const tFim=dFim?new Date(dFim+'T23:59:59').getTime():null;
   mensalFilt=mensalAll.filter(r=>{
     if(mes&&r.mes!==mes)return false;
     if(mot&&r.motorista!==mot)return false;
     if(con&&r.contrato!==con)return false;
-    if(fil&&r.filial!==fil)return false;
     if(sta&&r.statusPend!==sta)return false;
     if(placa&&!r.placa.includes(placa))return false;
-    if(q&&!`${r.motorista} ${r.placa} ${r.obs} ${r.mes}`.toLowerCase().includes(q))return false;
+    if(tIni||tFim){
+      const mesIdx=r.mesOrd>=0?r.mesOrd:0;
+      const ano=2026;
+      const tMes=new Date(ano,mesIdx,1).getTime();
+      const tMesFim=new Date(ano,mesIdx+1,0,23,59,59).getTime();
+      if(tIni&&tMesFim<tIni)return false;
+      if(tFim&&tMes>tFim)return false;
+    }
     return true;
   });
   mPage=1; renderMKpis(); renderMCharts(); renderMTable();
 };
-window.resetMensal=function(){['mSelMes','mSelMot','mSelCon','mSelFil','mSelStatus'].forEach(i=>g(i).value='');['mSelPlaca','mSearch','mTableSearch'].forEach(i=>g(i).value='');mActiveKpi=null;applyMensal();};
+window.resetMensal=function(){['mSelMes','mSelMot','mSelCon','mSelStatus'].forEach(i=>g(i).value='');['mSelPlaca','mTableSearch','mDateIni','mDateFim'].forEach(i=>{const el=g(i);if(el)el.value='';});mActiveKpi=null;applyMensal();};
 
 window.applyDiscos=function(){
-  const mes=v('dSelMes'),mot=v('dSelMot'),con=v('dSelCon'),fil=v('dSelFil'),
+  const mes=v('dSelMes'),mot=v('dSelMot'),con=v('dSelCon'),
         quin=v('dSelQuin'),obs=v('dSelObs'),placa=v('dSelPlaca').toUpperCase(),
-        q=(v('dSearch')||v('dTableSearch')).toLowerCase();
+        dIni=v('dDateIni'),dFim=v('dDateFim');
+  const tIni=dIni?new Date(dIni).getTime():null;
+  const tFim=dFim?new Date(dFim+'T23:59:59').getTime():null;
   discosFilt=discosAll.filter(r=>{
     if(mes&&r.mes!==mes)return false;
     if(mot&&r.motorista!==mot)return false;
     if(con&&r.contrato!==con)return false;
-    if(fil&&r.filial!==fil)return false;
     if(quin&&String(r.quinzena)!==quin)return false;
     if(placa&&!r.placa.includes(placa))return false;
     if(obs==='EXCESSO'&&!r.obs.includes('EXCESSO'))return false;
     if(obs==='CONFORME'&&!r.obs.toUpperCase().includes('CONFORME'))return false;
     if(obs==='FILIAL'&&!r.obs.toUpperCase().includes('FILIAL'))return false;
-    if(q&&!`${r.motorista} ${r.placa} ${r.obs} ${r.mes}`.toLowerCase().includes(q))return false;
+    if(tIni||tFim){
+      const di=r.dataInicial?new Date(r.dataInicial).getTime():null;
+      const df=r.dataFinal?new Date(r.dataFinal).getTime():null;
+      const ref=di||df;
+      if(ref){
+        if(tIni&&ref<tIni)return false;
+        if(tFim&&(di||df)>tFim)return false;
+      }
+    }
     return true;
   });
   dPage=1; renderDKpis(); renderDCharts(); renderDTable();
 };
-window.resetDiscos=function(){['dSelMes','dSelMot','dSelCon','dSelFil','dSelQuin','dSelObs'].forEach(i=>g(i).value='');['dSelPlaca','dSearch','dTableSearch'].forEach(i=>g(i).value='');dActiveKpi=null;applyDiscos();};
+window.resetDiscos=function(){['dSelMes','dSelMot','dSelCon','dSelQuin','dSelObs'].forEach(i=>g(i).value='');['dSelPlaca','dTableSearch','dDateIni','dDateFim'].forEach(i=>{const el=g(i);if(el)el.value='';});dActiveKpi=null;applyDiscos();};
 
 window.applyVdo=function(){
-  const mes=v('vSelMes'),mot=v('vSelMot'),con=v('vSelCon'),fil=v('vSelFil'),
+  const mes=v('vSelMes'),mot=v('vSelMot'),con=v('vSelCon'),
         quin=v('vSelQuin'),cp=v('vSelPicos'),placa=v('vSelPlaca').toUpperCase(),
-        q=(v('vSearch')||v('vTableSearch')).toLowerCase();
+        dIni=v('vDateIni'),dFim=v('vDateFim');
+  const tIni=dIni?new Date(dIni).getTime():null;
+  const tFim=dFim?new Date(dFim+'T23:59:59').getTime():null;
   vdoFilt=vdoAll.filter(r=>{
     if(mes&&r.mes!==mes)return false;
     if(mot&&r.motorista!==mot)return false;
     if(con&&r.contrato!==con)return false;
-    if(fil&&r.filial!==fil)return false;
     if(quin&&String(r.quinzena)!==quin)return false;
     if(placa&&!r.placa.includes(placa))return false;
     if(cp==='sim'&&r.picos===0)return false;
     if(cp==='nao'&&r.picos>0)return false;
-    if(q&&!`${r.motorista} ${r.placa} ${r.obs} ${r.mes}`.toLowerCase().includes(q))return false;
+    if(tIni||tFim){
+      const di=r.dataInicial?new Date(r.dataInicial).getTime():null;
+      const df=r.dataFinal?new Date(r.dataFinal).getTime():null;
+      const ref=di||df;
+      if(ref){
+        if(tIni&&ref<tIni)return false;
+        if(tFim&&(di||df)>tFim)return false;
+      }
+    }
     return true;
   });
   vPage=1; renderVKpis(); renderVCharts(); renderVTable();
 };
-window.resetVdo=function(){['vSelMes','vSelMot','vSelCon','vSelFil','vSelQuin','vSelPicos'].forEach(i=>g(i).value='');['vSelPlaca','vSearch','vTableSearch'].forEach(i=>g(i).value='');vActiveKpi=null;applyVdo();};
+window.resetVdo=function(){['vSelMes','vSelMot','vSelCon','vSelQuin','vSelPicos'].forEach(i=>g(i).value='');['vSelPlaca','vTableSearch','vDateIni','vDateFim'].forEach(i=>{const el=g(i);if(el)el.value='';});vActiveKpi=null;applyVdo();};
 
 // ── KPIs INTERATIVOS ──
 function kpiCard(id,activeId,icon,color,label,val,sub,hint,onclick){
