@@ -131,15 +131,12 @@ function populateFilters(){
   fillSelOrdered('mSelMes',mensalAll.map(r=>r.mes));
   fillSel('mSelMot',mensalAll.map(r=>r.motorista));
   fillSel('mSelCon',mensalAll.map(r=>r.contrato));
-  fillSel('mSelFil',mensalAll.map(r=>r.filial));
   fillSelOrdered('dSelMes',discosAll.map(r=>r.mes));
   fillSel('dSelMot',discosAll.map(r=>r.motorista));
   fillSel('dSelCon',discosAll.map(r=>r.contrato));
-  fillSel('dSelFil',discosAll.map(r=>r.filial));
   fillSelOrdered('vSelMes',vdoAll.map(r=>r.mes));
   fillSel('vSelMot',vdoAll.map(r=>r.motorista));
   fillSel('vSelCon',vdoAll.map(r=>r.contrato));
-  fillSel('vSelFil',vdoAll.map(r=>r.filial));
 }
 
 window.applyMensal=function(){
